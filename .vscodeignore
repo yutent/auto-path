@@ -1,0 +1,10 @@
+.vscode/**
+.vscode-test/**
+node_modules/**
+test/**
+package-lock.json
+.travis.yml
+.gitignore
+index.js
+test.js
+
