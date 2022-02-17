@@ -8,7 +8,7 @@ const vsc = require('vscode')
 const { resolve, dirname, join } = require('path')
 const fs = require('fs')
 
-const FILE = vsc.CompletionItemKind.File
+const FILE = vsc.CompletionItemKind.Text
 const FOLDER = vsc.CompletionItemKind.Folder
 
 /**
@@ -46,6 +46,12 @@ function getPrefixTxt(line, idx) {
   var txt = line.slice(0, idx)
   var n = txt.lastIndexOf('"') > -1 ? txt.lastIndexOf('"') : txt.lastIndexOf("'")
   return txt.slice(n + 1)
+}
+
+function item(text, type, p) {
+  var _ = new vsc.CompletionItem(text, type)
+  _.range = new vsc.Range(p, p)
+  return _
 }
 
 let options = {
@@ -100,9 +106,10 @@ class AutoPath {
     list = list.map(k => {
       let t = options.isMiniApp ? FILE : isdir(k) ? FOLDER : FILE
       k = k.slice(currDirFixed.length)
-      return new vsc.CompletionItem(k, t)
+      return item(k, t, pos)
     })
-    list.unshift(new vsc.CompletionItem('', FILE))
+    list.unshift(item('', FILE, pos))
+
     return Promise.resolve(list)
   }
 }
@@ -112,7 +119,11 @@ function __init__() {
 
   if (folders && folders.length) {
     options.workspace = folders[0].uri.path
+  } else {
+    options.workspace = '/opt/www/web/small-world'
   }
+
+  console.log()
 
   if (options.workspace) {
     // 判断是否是小程序
