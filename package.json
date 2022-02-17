@@ -1,8 +1,8 @@
 {
-  "name": "auth-path",
-  "displayName": "auth-path",
+  "name": "auto-path",
+  "displayName": "auto-path",
   "description": "🔥 自动提示文件路径, 方便引入项目为的文件",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "yutent",
   "author": "Yutent [@yutent]",
   "icon": "logo.png",
@@ -15,7 +15,7 @@
   "contributes": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/yutent/auth-path.git"
+    "url": "https://github.com/yutent/auto-path.git"
   },
   "keywords": [
     "autofile",
