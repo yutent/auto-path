@@ -38,40 +38,61 @@ function ls(dir) {
     var list = fs.readdirSync(dir)
     return list.map(it => resolve(dir, it))
   } catch (err) {
-    console.log(err)
     return []
   }
 }
 
+function getPrefixTxt(line, idx) {
+  var txt = line.slice(0, idx)
+  var n = txt.lastIndexOf('"') > -1 ? txt.lastIndexOf('"') : txt.lastIndexOf("'")
+  return txt.slice(n + 1)
+}
+
 let options = {
   isMiniApp: false, // 是否小程序
-  configFile: '' // 配置文件路径
+  extendWorkspace: null // 额外的项目目录, 一般是 vue项目中的 src目录
 }
 
 class AutoPath {
   provideCompletionItems(doc, pos) {
     var currDir = dirname(doc.fileName)
-    var inputTxt = doc.getText(doc.lineAt(pos).range)
+    var inputTxt = doc.lineAt(pos).text // 获取光标所在的整行代码
     var list = []
-    var currDirFixed = currDir
+    var currDirFixed = ''
 
-    inputTxt = inputTxt.replace(/^['"]/, '').replace(/['"]$/, '')
+    inputTxt = getPrefixTxt(inputTxt, pos.character)
     currDirFixed = join(currDir, inputTxt)
+
+    if (!inputTxt) {
+      return
+    }
 
     if (inputTxt.startsWith('./')) {
       list.push(...ls(currDirFixed))
     } else {
-      currDirFixed = join(options.workspace, inputTxt)
-      list.push(...ls(currDirFixed))
+      // 小程序
+      if (options.isMiniApp) {
+        currDirFixed = inputTxt
+        list = options.list.filter(it => it.startsWith(inputTxt))
+      }
+      // vue项目
+      else if (inputTxt.startsWith('@/') && options.extendWorkspace) {
+        currDirFixed = join(options.extendWorkspace, inputTxt.slice(2))
+        list.push(...ls(currDirFixed))
+      }
+      // 其他的
+      else {
+        currDirFixed = join(options.workspace, inputTxt)
+        list.push(...ls(currDirFixed))
+      }
     }
 
     list = list.map(k => {
-      let t = isdir(k) ? FOLDER : FILE
+      let t = options.isMiniApp ? FILE : isdir(k) ? FOLDER : FILE
       k = k.slice(currDirFixed.length)
       return new vsc.CompletionItem(k, t)
     })
     list.unshift(new vsc.CompletionItem('', FILE))
-
     return Promise.resolve(list)
   }
 }
@@ -82,34 +103,48 @@ function __init__() {
   if (folders && folders.length) {
     options.workspace = folders[0].uri.path
   } else {
-    options.workspace = '/opt/www/web/small-world/'
+    options.workspace = '/opt/www/web/zero.yutent.top/'
   }
 
   if (options.workspace) {
     try {
+      // 判断是否是小程序
       if (isfile(join(options.workspace, 'app.json'))) {
         let conf = require(join(options.workspace, 'app.json'))
-        options.list = conf.pages || []
-        console.log('可能是小程序', conf)
+        if (conf.pages && conf.pages.length) {
+          options.isMiniApp = true
+          options.list = conf.pages.map(it => `/${it}`)
+          if (conf.subPackages && conf.subPackages.length) {
+            for (let it of conf.subPackages) {
+              options.list.push(...it.pages.map(p => '/' + it.root + p))
+            }
+          }
+          return
+        }
+      }
+      // 简单判断是否是vue项目
+      if (
+        isfile(join(options.workspace, 'vue.config.js')) ||
+        isfile(join(options.workspace, 'vite.config.js'))
+      ) {
+        let extendWorkspace = join(options.workspace, 'src/')
+        if (isdir(extendWorkspace)) {
+          options.extendWorkspace = extendWorkspace
+        }
       }
     } catch (e) {
       console.log(e)
     }
   }
-  console.log(options, folders)
 }
 
 exports.activate = function(ctx) {
   __init__()
 
-  vsc.languages.getLanguages().then(function(data) {
-    // return console.log(data)
-  })
   let ap = new AutoPath()
   let auto = vsc.languages.registerCompletionItemProvider('*', ap, '"', "'", '/')
 
   ctx.subscriptions.push(auto)
 }
 
-function deactivate() {}
-exports.deactivate = deactivate
+exports.deactivate = function() {}
