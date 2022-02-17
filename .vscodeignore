@@ -7,4 +7,5 @@ package-lock.json
 .gitignore
 index.js
 test.js
+demo.js
 

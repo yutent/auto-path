@@ -11,7 +11,7 @@
   },
   "categories": ["Other"],
   "activationEvents": ["*"],
-  "main": "index.js",
+  "main": "out.js",
   "contributes": {},
   "repository": {
     "type": "git",
@@ -31,9 +31,6 @@
     "vscode:prepublish": "npm start -- --minify"
   },
   "license": "MIT",
-  "dependencies": {
-    "iofs": "^1.1.0"
-  },
   "devDependencies": {
     "esbuild": "^0.12.14"
   }
