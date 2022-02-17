@@ -72,8 +72,18 @@ class AutoPath {
     } else {
       // 小程序
       if (options.isMiniApp) {
+        let conf = require(join(options.workspace, 'app.json'))
+
+        list = conf.pages.map(it => `/${it}`)
+
+        if (conf.subPackages && conf.subPackages.length) {
+          for (let it of conf.subPackages) {
+            list.push(...it.pages.map(p => '/' + it.root + p))
+          }
+        }
+
         currDirFixed = inputTxt
-        list = options.list.filter(it => it.startsWith(inputTxt))
+        list = list.filter(it => it.startsWith(inputTxt))
       }
       // vue项目
       else if (inputTxt.startsWith('@/') && options.extendWorkspace) {
@@ -102,38 +112,26 @@ function __init__() {
 
   if (folders && folders.length) {
     options.workspace = folders[0].uri.path
-  } else {
-    options.workspace = '/opt/www/web/zero.yutent.top/'
   }
 
   if (options.workspace) {
-    try {
-      // 判断是否是小程序
-      if (isfile(join(options.workspace, 'app.json'))) {
-        let conf = require(join(options.workspace, 'app.json'))
-        if (conf.pages && conf.pages.length) {
-          options.isMiniApp = true
-          options.list = conf.pages.map(it => `/${it}`)
-          if (conf.subPackages && conf.subPackages.length) {
-            for (let it of conf.subPackages) {
-              options.list.push(...it.pages.map(p => '/' + it.root + p))
-            }
-          }
-          return
-        }
+    // 判断是否是小程序
+    if (isfile(join(options.workspace, 'app.json'))) {
+      let conf = require(join(options.workspace, 'app.json'))
+      if (conf.pages && conf.pages.length) {
+        options.isMiniApp = true
+        return
       }
-      // 简单判断是否是vue项目
-      if (
-        isfile(join(options.workspace, 'vue.config.js')) ||
-        isfile(join(options.workspace, 'vite.config.js'))
-      ) {
-        let extendWorkspace = join(options.workspace, 'src/')
-        if (isdir(extendWorkspace)) {
-          options.extendWorkspace = extendWorkspace
-        }
+    }
+    // 简单判断是否是vue项目
+    if (
+      isfile(join(options.workspace, 'vue.config.js')) ||
+      isfile(join(options.workspace, 'vite.config.js'))
+    ) {
+      let extendWorkspace = join(options.workspace, 'src/')
+      if (isdir(extendWorkspace)) {
+        options.extendWorkspace = extendWorkspace
       }
-    } catch (e) {
-      console.log(e)
     }
   }
 }
