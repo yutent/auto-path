@@ -2,7 +2,7 @@
   "name": "auto-path",
   "displayName": "auto-path",
   "description": "🔥 自动提示文件路径, 方便引入项目为的文件",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "yutent",
   "author": "Yutent [@yutent]",
   "icon": "logo.png",
@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "start": "esbuild index.js --bundle --outfile=out.js --external:vscode --format=cjs --platform=node",
-    "vscode:prepublish": "npm start -- --minify"
+    "build": "npm start -- --minify"
   },
   "license": "MIT",
   "devDependencies": {

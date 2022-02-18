@@ -8,7 +8,7 @@ const vsc = require('vscode')
 const { resolve, dirname, join } = require('path')
 const fs = require('fs')
 
-const FILE = vsc.CompletionItemKind.Text
+const FILE = vsc.CompletionItemKind.File
 const FOLDER = vsc.CompletionItemKind.Folder
 
 /**
@@ -73,7 +73,7 @@ class AutoPath {
       return
     }
 
-    if (inputTxt.startsWith('./')) {
+    if (inputTxt.startsWith('./') || inputTxt.startsWith('../')) {
       list.push(...ls(currDirFixed))
     } else {
       // 小程序
@@ -103,11 +103,14 @@ class AutoPath {
       }
     }
 
-    list = list.map(k => {
-      let t = options.isMiniApp ? FILE : isdir(k) ? FOLDER : FILE
-      k = k.slice(currDirFixed.length)
-      return item(k, t, pos)
-    })
+    list = list
+      .filter(it => it !== doc.fileName)
+      .map(k => {
+        let t = options.isMiniApp ? FILE : isdir(k) ? FOLDER : FILE
+        k = k.slice(currDirFixed.length)
+        return item(k, t, pos)
+      })
+
     list.unshift(item('', FILE, pos))
 
     return Promise.resolve(list)
@@ -119,11 +122,7 @@ function __init__() {
 
   if (folders && folders.length) {
     options.workspace = folders[0].uri.path
-  } else {
-    options.workspace = '/opt/www/web/small-world'
   }
-
-  console.log()
 
   if (options.workspace) {
     // 判断是否是小程序
@@ -135,13 +134,13 @@ function __init__() {
       }
     }
     // 简单判断是否是vue项目
-    if (
-      isfile(join(options.workspace, 'vue.config.js')) ||
-      isfile(join(options.workspace, 'vite.config.js'))
-    ) {
-      let extendWorkspace = join(options.workspace, 'src/')
-      if (isdir(extendWorkspace)) {
-        options.extendWorkspace = extendWorkspace
+    if (isfile(join(options.workspace, 'package.json'))) {
+      let conf = require(join(options.workspace, 'package.json'))
+      if (conf.dependencies.vue) {
+        let extendWorkspace = join(options.workspace, 'src/')
+        if (isdir(extendWorkspace)) {
+          options.extendWorkspace = extendWorkspace
+        }
       }
     }
   }
