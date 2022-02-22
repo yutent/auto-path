@@ -36,7 +36,7 @@ function isfile(path) {
 function ls(dir) {
   try {
     var list = fs.readdirSync(dir)
-    return list.map(it => resolve(dir, it))
+    return list.filter(it => !it.startsWith('.')).map(it => resolve(dir, it))
   } catch (err) {
     return []
   }
@@ -45,7 +45,18 @@ function ls(dir) {
 function getPrefixTxt(line, idx) {
   var txt = line.slice(0, idx)
   var n = txt.lastIndexOf('"') > -1 ? txt.lastIndexOf('"') : txt.lastIndexOf("'")
-  return txt.slice(n + 1)
+  var r
+
+  txt = txt.slice(n + 1)
+  if (txt) {
+    // 判断匹配前缀是否被包含在引号中
+    r = new RegExp(`(['"])${txt}\\1`)
+
+    if (r.test(line)) {
+      return txt
+    }
+  }
+  return ''
 }
 
 function item(text, type, p) {
@@ -65,9 +76,32 @@ class AutoPath {
     var inputTxt = doc.lineAt(pos).text // 获取光标所在的整行代码
     var list = []
     var currDirFixed = ''
+    var inputTxtTrim = inputTxt.trim()
+
+    // console.log('原始inputTxt >>>> ', inputTxt)
+
+    /**
+     * 过滤掉 以下几种情况
+     * @1 在注释后面的
+     * @2 当前光标在行末的
+     * @3 匹配前缀在行首的
+     */
+    if (
+      inputTxtTrim.startsWith('// ') ||
+      inputTxtTrim.startsWith('/* ') ||
+      inputTxtTrim.startsWith('# ') ||
+      inputTxtTrim.startsWith('./') ||
+      inputTxtTrim.startsWith('../') ||
+      inputTxtTrim.startsWith('/') ||
+      inputTxtTrim.length === pos.character
+    ) {
+      return
+    }
 
     inputTxt = getPrefixTxt(inputTxt, pos.character)
     currDirFixed = join(currDir, inputTxt)
+
+    // console.log('修正后的inputTxt: ', inputTxt)
 
     if (!inputTxt) {
       return
@@ -111,9 +145,10 @@ class AutoPath {
         return item(k, t, pos)
       })
 
-    list.unshift(item('', FILE, pos))
-
-    return Promise.resolve(list)
+    if (list.length) {
+      list.unshift(item('', FILE, pos))
+      return Promise.resolve(list)
+    }
   }
 }
 
