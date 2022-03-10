@@ -67,6 +67,7 @@ function item(text, type, p) {
 
 let options = {
   isMiniApp: false, // 是否小程序
+  workspace: resolve('./'),
   extendWorkspace: null // 额外的项目目录, 一般是 vue项目中的 src目录
 }
 
@@ -136,6 +137,8 @@ class AutoPath {
         list.push(...ls(currDirFixed))
       }
     }
+
+    // console.log('currDirFixed: ', options, currDirFixed, list)
 
     list = list
       .filter(it => it !== doc.fileName)
