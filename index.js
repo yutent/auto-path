@@ -159,7 +159,7 @@ function __init__() {
   let folders = vsc.workspace.workspaceFolders
 
   if (folders && folders.length) {
-    options.workspace = folders[0].uri.path
+    options.workspace = folders[0].uri.fsPath
   }
 
   if (options.workspace) {
