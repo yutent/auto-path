@@ -102,7 +102,7 @@ class AutoPath {
     inputTxt = getPrefixTxt(inputTxt, pos.character)
     currDirFixed = join(currDir, inputTxt)
 
-    // console.log('修正后的inputTxt: ', inputTxt)
+    // console.log('修正后的inputTxt: ', inputTxt, currDirFixed)
 
     if (!inputTxt) {
       return
@@ -129,6 +129,9 @@ class AutoPath {
       // vue项目
       else if (inputTxt.startsWith('@/') && options.extendWorkspace) {
         currDirFixed = join(options.extendWorkspace, inputTxt.slice(2))
+        list.push(...ls(currDirFixed))
+      } else if (inputTxt.startsWith('~')) {
+        currDirFixed = inputTxt.replace(/^~/, process.env.HOME)
         list.push(...ls(currDirFixed))
       }
       // 其他的
@@ -158,6 +161,8 @@ class AutoPath {
 function __init__() {
   let folders = vsc.workspace.workspaceFolders
 
+  // console.log(folders)
+
   if (folders && folders.length) {
     options.workspace = folders[0].uri.fsPath
   }
@@ -174,7 +179,7 @@ function __init__() {
     // 简单判断是否是vue项目
     if (isfile(join(options.workspace, 'package.json'))) {
       let conf = require(join(options.workspace, 'package.json'))
-      if (conf.dependencies.vue) {
+      if (conf.dependencies && conf.dependencies.vue) {
         let extendWorkspace = join(options.workspace, 'src/')
         if (isdir(extendWorkspace)) {
           options.extendWorkspace = extendWorkspace
@@ -184,7 +189,7 @@ function __init__() {
   }
 }
 
-exports.activate = function(ctx) {
+exports.activate = function (ctx) {
   __init__()
 
   let ap = new AutoPath()
@@ -193,4 +198,4 @@ exports.activate = function(ctx) {
   ctx.subscriptions.push(auto)
 }
 
-exports.deactivate = function() {}
+exports.deactivate = function () {}
